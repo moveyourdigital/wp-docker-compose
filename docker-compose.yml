@@ -1,0 +1,61 @@
+services:
+  wordpress:
+    image: wordpress:php8.2
+    restart: always
+    ports:
+      - 80:80
+    hostname: localhost.test
+    environment:
+      WP_CLI_ALLOW_ROOT: 1
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: exampleuser
+      WORDPRESS_DB_PASSWORD: examplepass
+      WORDPRESS_DB_NAME: exampledb
+      WORDPRESS_DEBUG: "true"
+      WORDPRESS_CONFIG_EXTRA: |
+        /**#@+
+        * SMTP Settings
+        */
+        define( 'SMTP_ENABLED', getenv_docker( 'SMTP_ENABLED', 1 ) );
+        define( 'SMTP_HOST', getenv_docker( 'SMTP_HOST', 'smtp' ) );
+        define( 'SMTP_AUTH', getenv_docker( 'SMTP_AUTH', false ) );
+        define( 'SMTP_PORT', getenv_docker('SMTP_PORT', 1025 ) );
+        define( 'SMTP_SECURE', getenv_docker( 'SMTP_SECURE', false ) );
+
+        /**#@+
+        * JWT Settings
+        */
+        define( 'JWT_AUTH_SECRET_KEY', getenv_docker('JWT_AUTH_SECRET_KEY', '') );
+    volumes:
+      - wordpress:/var/www/html
+      - ./themes:/var/www/html/wp-content/themes
+      - ./plugins:/var/www/html/wp-content/plugins
+      - ./mu-plugins:/var/www/html/wp-content/mu-plugins
+      - ./docker-uploads.ini:/usr/local/etc/php/conf.d/docker-uploads.ini
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: exampledb
+      MYSQL_USER: exampleuser
+      MYSQL_PASSWORD: examplepass
+      MYSQL_RANDOM_ROOT_PASSWORD: '1'
+    volumes:
+      - db:/var/lib/mysql
+
+  smtp:
+    image: haravich/fake-smtp-server
+    restart: always
+    ports:
+      - 1080:1080
+
+volumes:
+  wordpress:
+  db:
